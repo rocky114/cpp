@@ -3,51 +3,60 @@
 #include <map>
 #include <vector>
 
-
-struct element {
-	std::string tag {};
-	std::map<std::string, std::string> attributes {};
-	std::map<std::string, element> children {};
-	bool is_closing_tag {false};
+struct element
+{
+	std::string tag{};
+	std::map<std::string, std::string> attributes{};
+	std::map<std::string, element> children{};
+	bool is_closing_tag{false};
 };
 
 using custom = std::map<std::string, struct element>;
 
 custom append_xml_element(custom nodes, struct element current);
 
-void extract(custom& root, const std::string line) 
+void extract(custom &root, const std::string line)
 {
 	std::string::size_type start = line.find('<');
 	std::string::size_type end = line.find('>');
 	std::string tagContent = line.substr(start + 1, end - start - 1);
 
-	struct element current {};
+	struct element current
+	{
+	};
 
-	if (tagContent[0] == '/') {
+	if (tagContent[0] == '/')
+	{
 		tagContent = tagContent.substr(1);
 	}
 
 	std::stringstream ss(tagContent);
 	std::string word;
 
-	std::string key {};
-	std::string val {};
-	bool is_equal_operator {false};
+	std::string key{};
+	std::string val{};
+	bool is_equal_operator{false};
 
-	for (int i = 0; ss >> word; i++) {
-		if (i == 0) {
+	for (int i = 0; ss >> word; i++)
+	{
+		if (i == 0)
+		{
 			current.tag = word;
 		}
 
-		if (word == "=") {
+		if (word == "=")
+		{
 			is_equal_operator = true;
 
 			continue;
 		}
 
-		if (is_equal_operator) {
+		if (is_equal_operator)
+		{
 			val = word.substr(1, word.size() - 2);
-		} else {
+		}
+		else
+		{
 			key = word;
 
 			continue;
@@ -57,35 +66,28 @@ void extract(custom& root, const std::string line)
 		current.attributes[key] = val;
 	}
 
-	/*if (root.tag == "") {
-		root.tag = current.tag;
-		root.attributes = current.attributes;
-
-		return;
-	}
-
-	if (root.tag == current.tag) {
-		root.is_closing_tag = true;
-		return;
-	}*/
-
 	root = append_xml_element(root, current);
 }
 
-custom append_xml_element(custom nodes, struct element current) 
+custom append_xml_element(custom nodes, struct element current)
 {
-	for (auto& root_pair : nodes) {
-		if (!root_pair.second.is_closing_tag) {
-			for (auto& pair : root_pair.second.children) {		
-				if (!pair.second.is_closing_tag) {
+	for (auto &root_pair : nodes)
+	{
+		if (!root_pair.second.is_closing_tag)
+		{
+			for (auto &pair : root_pair.second.children)
+			{
+				if (!pair.second.is_closing_tag)
+				{
 					custom temp = append_xml_element({{pair.first, pair.second}}, current);
 					pair.second = temp[pair.first];
 
 					return nodes;
 				}
 			}
-			
-			if (root_pair.second.tag == current.tag) {
+
+			if (root_pair.second.tag == current.tag)
+			{
 				root_pair.second.is_closing_tag = true;
 				return nodes;
 			}
@@ -101,31 +103,36 @@ custom append_xml_element(custom nodes, struct element current)
 	return nodes;
 }
 
-void echo (custom nodes) 
+void echo(custom nodes)
 {
-	for (auto root_pair : nodes) {
+	for (auto root_pair : nodes)
+	{
 		std::cout << "echo tag: " << root_pair.second.tag << " attribute: ";
-		for (auto pair : root_pair.second.attributes) {
+		for (auto pair : root_pair.second.attributes)
+		{
 			std::cout << pair.first << " = " << pair.second << " ";
 		}
 		std::cout << std::endl;
 
-		for (auto pair : root_pair.second.children) {
+		for (auto pair : root_pair.second.children)
+		{
 			echo({{pair.first, pair.second}});
 		}
 	}
 }
 
-std::string parse(custom root, std::string line) {
-	std::vector<std::string> result {};
+std::string parse(custom root, std::string line)
+{
+	std::vector<std::string> result{};
 
-	size_t pos {};
-    size_t last_pos {};
-    while ((pos = line.find_first_of(".~", last_pos)) != std::string::npos) {
-        result.push_back(line.substr(last_pos, pos - last_pos));
-        last_pos = pos + 1;
-    }
-    result.push_back(line.substr(last_pos));
+	size_t pos{};
+	size_t last_pos{};
+	while ((pos = line.find_first_of(".~", last_pos)) != std::string::npos)
+	{
+		result.push_back(line.substr(last_pos, pos - last_pos));
+		last_pos = pos + 1;
+	}
+	result.push_back(line.substr(last_pos));
 
 	auto length = result.size() - 1;
 
@@ -133,39 +140,46 @@ std::string parse(custom root, std::string line) {
 
 	custom current_node = root;
 
-	for (int i = 0; i < length - 1; i++) {
-		for (auto pair : current_node) {
-			if (pair.first == result[i]) {
+	for (int i = 0; i < length - 1; i++)
+	{
+		for (auto pair : current_node)
+		{
+			if (pair.first == result[i])
+			{
 				current_node = pair.second.children;
 				break;
 			}
 		}
 	}
 
-	for (auto pair : current_node) {
-		if (pair.second.tag == result[length - 1]) {
+	for (auto pair : current_node)
+	{
+		if (pair.second.tag == result[length - 1])
+		{
 			auto it = pair.second.attributes.find(attr);
-			if (it != pair.second.attributes.end()) {
+			if (it != pair.second.attributes.end())
+			{
 				return pair.second.attributes[attr];
 			}
 		}
 	}
-	
+
 	return "Not Found!";
 }
 
-int main() 
-{		
-	int number {10}, query {10};
+int main()
+{
+	int number{10}, query{10};
 
 	std::cin >> number >> query;
 
 	std::cin.ignore();
 
-	custom root {};
+	custom root{};
 
-	for (int i = 0; i < number; i++) {
-		std::string line {};
+	for (int i = 0; i < number; i++)
+	{
+		std::string line{};
 		std::getline(std::cin, line);
 
 		/*switch (i)
@@ -207,8 +221,9 @@ int main()
 		extract(root, line);
 	}
 
-	for (int i = 0; i < query; i++) {
-		std::string line {};
+	for (int i = 0; i < query; i++)
+	{
+		std::string line{};
 		std::getline(std::cin, line);
 
 		/*switch (i)
